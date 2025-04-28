@@ -3,7 +3,7 @@ import random
 from string import hexdigits
 
 cache = dict()
-EMBED_BASE_URL = "https://your-new-embed.site/embed?url="  # <-- Set your new embed base here
+EMBED_BASE_URL = "https://gogoplay.io/streaming.php?id=" # <-- Set your new embed base here
 
 
 def get_hash(data, back):
