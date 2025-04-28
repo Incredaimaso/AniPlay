@@ -3,6 +3,7 @@ import random
 from string import hexdigits
 
 cache = dict()
+EMBED_BASE_URL = "https://your-new-embed.site/embed?url="  # <-- Set your new embed base here
 
 
 def get_hash(data, back):
@@ -14,24 +15,17 @@ def get_hash(data, back):
     return hash
 
 
-def get_hash_btn(data: None, hash: None):
+def get_hash_btn(data=None, hash=None):
     if hash:
         cache[hash] = data
         return hash
 
-    if not data:
-        while True:
-            hash = "".join(random.choices(hexdigits, k=10))
-            if not cache.get(hash):
-                cache[hash] = ""
-                break
-    else:
-        while True:
-            hash = "".join(random.choices(hexdigits, k=10))
-            if not cache.get(hash):
-                cache[hash] = data
-                break
-    return hash
+    while True:
+        new_hash = "".join(random.choices(hexdigits, k=10))
+        if not cache.get(new_hash):
+            cache[new_hash] = data or ""
+            break
+    return new_hash
 
 
 def get_hash_anime(data):
@@ -44,16 +38,15 @@ def get_hash_anime(data):
 
 
 class BTN:
+    @staticmethod
     def searchCMD(id, data, back):
         temp = []
-        pos = 1
-        x = []
-
         for i in data:
             cb = f"AnimeS {id} " + get_hash(i["id"], back)
             temp.append([InlineKeyboardButton(text=i["title"], callback_data=cb)])
+        
         pos = len(temp)
-        hash = get_hash_btn(None, None)
+        hash = get_hash_btn()
 
         if len(temp) > 10:
             b_parts = []
@@ -61,211 +54,140 @@ class BTN:
             page = 0
 
             while pos > 10:
-                t = temp[x : x + 10]
-
-                if len(t) == 0:
+                t = temp[x:x+10]
+                if not t:
                     break
                 b_parts.append(t)
                 x += 10
                 pos -= 10
 
                 if page == 0:
-                    b_parts[page].append(
-                        [
-                            InlineKeyboardButton(
-                                text="Next  ⫸",
-                                callback_data=f"switch_anime {id} {hash} 1",
-                            )
-                        ]
-                    )
+                    b_parts[page].append([
+                        InlineKeyboardButton(text="Next ⫸", callback_data=f"switch_anime {id} {hash} 1")
+                    ])
                 else:
-                    b_parts[page].append(
-                        [
-                            InlineKeyboardButton(
-                                text="⫷ Prev",
-                                callback_data=f"switch_anime {id} {hash} {page-1}",
-                            ),
-                            InlineKeyboardButton(
-                                text="Next ⫸",
-                                callback_data=f"switch_anime {id} {hash} {page+1}",
-                            ),
-                        ]
-                    )
-
+                    b_parts[page].append([
+                        InlineKeyboardButton(text="⫷ Prev", callback_data=f"switch_anime {id} {hash} {page-1}"),
+                        InlineKeyboardButton(text="Next ⫸", callback_data=f"switch_anime {id} {hash} {page+1}")
+                    ])
                 page += 1
+
             if pos > 0:
                 b_parts.append(temp[x:])
-                b_parts[page].append(
-                    [
-                        InlineKeyboardButton(
-                            text="⫷ Prev",
-                            callback_data=f"switch_anime {id} {hash} {page-1}",
-                        )
-                    ]
-                )
+                b_parts[page].append([
+                    InlineKeyboardButton(text="⫷ Prev", callback_data=f"switch_anime {id} {hash} {page-1}")
+                ])
 
-            hash = get_hash_btn((b_parts, back), hash)
-            BTN = b_parts[0]
-            return InlineKeyboardMarkup(BTN)
+            get_hash_btn((b_parts, back), hash)
+            return InlineKeyboardMarkup(b_parts[0])
         else:
             return InlineKeyboardMarkup(temp)
 
+    @staticmethod
     def AnimeS(id, data, back):
         temp = []
-        pos = 1
         x = []
+        pos = 1
 
         for i in data:
             cb = f"episode {id} " + get_hash(i[1], back)
+            x.append(InlineKeyboardButton(text=i[0], callback_data=cb))
             if pos % 4 == 0:
-                x.append(InlineKeyboardButton(text=i[0], callback_data=cb))
                 temp.append(x)
                 x = []
-            else:
-                x.append(InlineKeyboardButton(text=i[0], callback_data=cb))
             pos += 1
 
-        if len(x) != 0:
+        if x:
             temp.append(x)
 
-        hash = get_hash_btn(None, None)
+        hash = get_hash_btn()
 
         if len(temp) > 23:
             b_parts = []
             x = 0
             page = 0
 
-            while pos > 23:
-                t = temp[x : x + 23]
-
-                if len(t) == 0:
+            while len(temp) - x > 23:
+                t = temp[x:x+23]
+                if not t:
                     break
                 b_parts.append(t)
                 x += 23
-                pos -= 23
 
                 if page == 0:
-                    b_parts[page].append(
-                        [
-                            InlineKeyboardButton(
-                                text="Back", callback_data=f"searchBACK {id} {back}"
-                            ),
-                            InlineKeyboardButton(
-                                text="Next  ⫸", callback_data=f"switch_ep {id} {hash} 1"
-                            ),
-                        ]
-                    )
+                    b_parts[page].append([
+                        InlineKeyboardButton(text="Back", callback_data=f"searchBACK {id} {back}"),
+                        InlineKeyboardButton(text="Next ⫸", callback_data=f"switch_ep {id} {hash} 1")
+                    ])
                 else:
-                    b_parts[page].append(
-                        [
-                            InlineKeyboardButton(
-                                text="⫷ Prev",
-                                callback_data=f"switch_ep {id} {hash} {page-1}",
-                            ),
-                            InlineKeyboardButton(
-                                text="Next ⫸",
-                                callback_data=f"switch_ep {id} {hash} {page+1}",
-                            ),
-                        ]
-                    )
-                b_parts[page].append(
-                    [
-                        InlineKeyboardButton(
-                            text="Back", callback_data=f"searchBACK {id} {back}"
-                        )
-                    ]
-                )
+                    b_parts[page].append([
+                        InlineKeyboardButton(text="⫷ Prev", callback_data=f"switch_ep {id} {hash} {page-1}"),
+                        InlineKeyboardButton(text="Next ⫸", callback_data=f"switch_ep {id} {hash} {page+1}")
+                    ])
+                b_parts[page].append([
+                    InlineKeyboardButton(text="Back", callback_data=f"searchBACK {id} {back}")
+                ])
                 page += 1
-            if pos > 0:
-                b_parts.append(temp[x:])
-                b_parts[page].append(
-                    [
-                        InlineKeyboardButton(
-                            text="⫷ Prev",
-                            callback_data=f"switch_ep {id} {hash} {page-1}",
-                        ),
-                        InlineKeyboardButton(
-                            text="Back", callback_data=f"searchBACK {id} {back}"
-                        ),
-                    ]
-                )
 
-            hash = get_hash_btn((b_parts, back), hash)
-            BTN = b_parts[0]
-            return InlineKeyboardMarkup(BTN)
+            if len(temp) - x > 0:
+                b_parts.append(temp[x:])
+                b_parts[page].append([
+                    InlineKeyboardButton(text="⫷ Prev", callback_data=f"switch_ep {id} {hash} {page-1}"),
+                    InlineKeyboardButton(text="Back", callback_data=f"searchBACK {id} {back}")
+                ])
+
+            get_hash_btn((b_parts, back), hash)
+            return InlineKeyboardMarkup(b_parts[0])
         else:
-            temp.append(
-                [
-                    InlineKeyboardButton(
-                        text="Back", callback_data=f"searchBACK {id} {back}"
-                    )
-                ]
-            )
+            temp.append([
+                InlineKeyboardButton(text="Back", callback_data=f"searchBACK {id} {back}")
+            ])
             return InlineKeyboardMarkup(temp)
 
+    @staticmethod
     def episode(id, surl, murl, back, dl_open_cb):
         temp = []
-        pos = 1
-        x = []
-        temp.append(
-            [InlineKeyboardButton(text="⬇️ Direct Url ⬇️", callback_data="engSUB")]
-        )
 
+        temp.append([InlineKeyboardButton(text="⬇️ Direct Url ⬇️", callback_data="engSUB")])
+
+        x = []
+        pos = 1
         for i in surl:
+            x.append(InlineKeyboardButton(text=i[0], url=f"{EMBED_BASE_URL}{i[1]}"))
             if pos % 3 == 0:
-                x.append(
-                    InlineKeyboardButton(
-                        text=i[0], url="https://animedex.pages.dev/embed?url=" + i[1]
-                    )
-                )
                 temp.append(x)
                 x = []
-            else:
-                x.append(
-                    InlineKeyboardButton(
-                        text=i[0], url="https://animedex.pages.dev/embed?url=" + i[1]
-                    )
-                )
             pos += 1
-
-        if len(x) != 0:
+        if x:
             temp.append(x)
 
-        x = []
-        pos = 1
-
-        if len(murl) != 0:
+        if murl:
             temp.append([InlineKeyboardButton(text="➖➖➖➖➖➖➖➖➖➖", callback_data="line")])
+            temp.append([InlineKeyboardButton(text="⬇️ Mirror Url ⬇️", callback_data="engDUB")])
 
-            temp.append(
-                [InlineKeyboardButton(text="⬇️ Mirror Url ⬇️", callback_data="engDUB")]
-            )
-
+            x = []
+            pos = 1
             for i in murl:
+                x.append(InlineKeyboardButton(text=i[0].title(), url=i[1]))
                 if pos % 3 == 0:
-                    x.append(InlineKeyboardButton(text=i[0].title(), url=i[1]))
                     temp.append(x)
                     x = []
-                else:
-                    x.append(InlineKeyboardButton(text=i[0].title(), url=i[1]))
                 pos += 1
-
-            if len(x) != 0:
+            if x:
                 temp.append(x)
-        temp.append(
-            [InlineKeyboardButton(text="📥 Download 📥", callback_data=dl_open_cb)]
-        )
-        temp.append(
-            [InlineKeyboardButton(text="Back", callback_data=f"AnimeS {id} {back}")]
-        )
+
+        temp.append([InlineKeyboardButton(text="📥 Download 📥", callback_data=dl_open_cb)])
+        temp.append([InlineKeyboardButton(text="Back", callback_data=f"AnimeS {id} {back}")])
+
         return InlineKeyboardMarkup(temp)
 
+    @staticmethod
     def download(id, links, back):
         temp = []
 
         for q, l in links.items():
-            q = q.split("x")[1] + "p"
-            temp.append([InlineKeyboardButton(text=q, url=l)])
+            resolution = q.split("x")[1] + "p"
+            temp.append([InlineKeyboardButton(text=resolution, url=l)])
 
         temp.append([InlineKeyboardButton(text="Back", callback_data=back)])
         return InlineKeyboardMarkup(temp)
